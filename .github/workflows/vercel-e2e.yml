@@ -1,0 +1,70 @@
+# This workflow uses actions/cache@v3, but it would always get cache miss since it runs on deployment_status trigger
+# See - https://github.com/actions/cache/issues/319
+# If GitHub would allow deployment_status trigger to access cache, it would work here too
+name: Vercel E2E
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      deploymentUrl:
+        description: 'Deployment URL to test with:'
+        required: true
+      prNumber:
+        description: 'Pull request number (optional):'
+        required: false
+      shouldUpdateBaseline:
+        description: 'Should the baseline be updated to reflect updates to the UI?'
+        required: false
+        default: "false"
+jobs:
+  check_config:
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.should_run.outputs.proceed }}
+      site_name: ${{ steps.should_run.outputs.site_name }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Preliminary checks
+        id: should_run
+        env:
+          DEPLOYMENT_URL: ${{ github.event.inputs.deploymentUrl }}
+          DEPLOYMENT_STATUS: ${{ github.event.deployment_status.state }}
+          TARGET_URL: ${{ github.event.deployment_status.target_url }}
+        run: |
+          SITE_NAME=$(jq -r '.vercelSiteName // empty' ci.config.json)
+          
+          if [[ -n "$DEPLOYMENT_URL" || (-n "$SITE_NAME" && "$DEPLOYMENT_STATUS" == "success" && "$TARGET_URL" == *"$SITE_NAME"*) ]]; then
+            echo "proceed=true" >> $GITHUB_OUTPUT
+          else
+            echo "proceed=false" >> $GITHUB_OUTPUT
+          fi
+          
+          echo site_name="$SITE_NAME" >> $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
+  vercel-e2e:
+    needs: check_config
+    if: needs.check_config.outputs.proceed == 'true'
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm install
+      - uses: ./.github/actions/setup-playwright
+      - name: Set Run with URL
+        run: |
+          echo "setting DEPLOYMENT_URL=${{ github.event.inputs.deploymentUrl || github.event.deployment_status.target_url }}"
+          echo "DEPLOYMENT_URL=${{ github.event.inputs.deploymentUrl || github.event.deployment_status.target_url }}" >> $GITHUB_ENV
+      - uses: ./.github/actions/run-playwright
+        id: runPlaywright
+        with:
+          provider: 'vercel'
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          prNumber: ${{ github.event.inputs.prNumber }}
+          provider-deployment-url: ${{ env.DEPLOYMENT_URL }}
+          shouldUpdateBaseline: ${{ github.event.inputs.shouldUpdateBaseline }}
+          actor: ${{ github.actor }}

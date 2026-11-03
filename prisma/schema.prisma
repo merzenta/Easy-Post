@@ -1,0 +1,157 @@
+// Prisma Schema for EasyPost x Wix Custom Shipping Rates App
+// Database: PostgreSQL (Neon / Supabase / AWS RDS Aurora)
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// -------------------------------------------------------------
+// 1. Merchant Settings & EasyPost Credentials
+// -------------------------------------------------------------
+model MerchantSettings {
+  id                    String   @id @default(uuid())
+  instanceId            String   @unique @map("instance_id")
+  environment           String   @default("TEST") // TEST | PRODUCTION
+  apiKeyEncrypted       String   @map("api_key_encrypted")
+  webhookSecret         String?  @map("webhook_secret")
+  defaultLabelFormat    String   @default("PDF") @map("default_label_format") // PDF | PNG | ZPL | EPL2
+  
+  // JSONB Document Structures
+  merchantLocation      Json     @map("merchant_location")
+  packagePresets        Json     @default("[]") @map("package_presets")
+  enabledCarriers       Json     @default("[\"USPS\", \"FedEx\", \"UPS\", \"DHL\"]") @map("enabled_carriers")
+  carrierAccounts       Json     @default("[]") @map("carrier_accounts")
+  
+  // Pricing & Fallback Controls
+  handlingFeeType       String   @default("NONE") @map("handling_fee_type")
+  handlingFeeValue      Float    @default(0.0) @map("handling_fee_value")
+  freeShippingThreshold Float?  @map("free_shipping_threshold")
+  fallbackRate          Float    @default(10.0) @map("fallback_rate")
+  defaultItemWeightOz   Float    @default(16.0) @map("default_item_weight_oz")
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@index([instanceId])
+  @@map("merchant_settings")
+}
+
+// -------------------------------------------------------------
+// 2. Shipments & EasyPost Postage Labels
+// -------------------------------------------------------------
+model Shipment {
+  id                 String          @id @default(uuid())
+  instanceId         String          @map("instance_id")
+  wixOrderId         String          @map("wix_order_id")
+  easypostShipmentId String          @unique @map("easypost_shipment_id")
+  status             String          @default("CREATED") // CREATED, LABEL_PENDING, LABEL_PURCHASED, MANIFESTED, CANCELLED
+  carrier            String          @map("carrier")
+  service            String          @map("service")
+  rateId             String?         @map("rate_id")
+  rateAmount         Float           @default(0.0) @map("rate_amount")
+  rateCurrency       String          @default("USD") @map("rate_currency")
+  trackingCode       String?         @map("tracking_code")
+  trackerId          String?         @map("tracker_id")
+  wixFulfillmentId   String?         @map("wix_fulfillment_id")
+  
+  senderAddress      Json            @map("sender_address")
+  recipientAddress   Json            @map("recipient_address")
+  parcelData         Json            @map("parcel_data")
+  customsInfo        Json?           @map("customs_info")
+  ratesData          Json?           @map("rates_data")
+  
+  labelUrl           String?         @map("label_url")
+  labelFormat        String          @default("PDF") @map("label_format")
+  
+  scanFormId         String?         @map("scan_form_id")
+  scanForm           ScanFormOrder?  @relation(fields: [scanFormId], references: [easypostScanFormId])
+  
+  items              ShipmentItem[]
+
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+
+  @@index([instanceId, status])
+  @@index([instanceId, wixOrderId])
+  @@index([instanceId, scanFormId])
+  @@index([trackingCode])
+  @@map("shipments")
+}
+
+// -------------------------------------------------------------
+// 3. Multi-Item Line Details for Shipments
+// -------------------------------------------------------------
+model ShipmentItem {
+  id             String    @id @default(uuid())
+  shipmentId     String    @map("shipment_id")
+  itemId         String    @map("item_id")
+  title          String    @map("title")
+  quantity       Int       @default(1)
+  weightOz       Float     @map("weight_oz")
+  lengthIn       Float?    @map("length_in")
+  widthIn        Float?    @map("width_in")
+  heightIn       Float?    @map("height_in")
+  price          Float?    @map("price")
+  
+  shipment       Shipment  @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([shipmentId])
+  @@map("shipment_items")
+}
+
+// -------------------------------------------------------------
+// 4. SCAN Forms (End-of-day Manifests)
+// -------------------------------------------------------------
+model ScanFormOrder {
+  id                 String     @id @default(uuid())
+  instanceId         String     @map("instance_id")
+  easypostScanFormId String     @unique @map("easypost_scan_form_id")
+  status             String     @default("created") // created | failed
+  formUrl            String?    @map("form_url")
+  formFileType       String?    @default("PDF") @map("form_file_type")
+  shipmentCount      Int        @default(0) @map("shipment_count")
+  trackingCodes      Json       @default("[]") @map("tracking_codes")
+  batchId            String?    @map("batch_id")
+  message            String?
+  
+  shipments          Shipment[]
+
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+
+  @@index([instanceId, createdAt])
+  @@map("scan_form_orders")
+}
+
+// -------------------------------------------------------------
+// 5. EasyPost Live Tracking Cache & Event Store
+// -------------------------------------------------------------
+model TrackingRecord {
+  id                String    @id @default(uuid())
+  instanceId        String    @map("instance_id")
+  trackingCode      String    @unique @map("tracking_code")
+  easypostTrackerId String?   @unique @map("easypost_tracker_id")
+  carrier           String    @default("USPS")
+  status            String    @map("status") // pre_transit, in_transit, out_for_delivery, delivered, return_to_sender, failure, unknown
+  statusDetail      String?   @map("status_detail")
+  publicUrl         String?   @map("public_url")
+  estDeliveryDate   String?   @map("est_delivery_date")
+  events            Json      @default("[]") @map("events")
+  isDelivered       Boolean   @default(false) @map("is_delivered")
+  hasException      Boolean   @default(false) @map("has_exception")
+  lastCheckedAt     DateTime  @default(now()) @map("last_checked_at")
+
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([instanceId, isDelivered])
+  @@index([instanceId, hasException])
+  @@map("tracking_records")
+}
