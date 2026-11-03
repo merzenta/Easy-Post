@@ -87,6 +87,10 @@ test('Quota Engine & Label Enforcement Unit Tests', async (t) => {
     assert.strictEqual(check.monthlyQuota, 50);
     assert.strictEqual(check.labelsGenerated, 5);
     assert.strictEqual(check.remainingLabels, 45); // 50 - 5 = 45 remaining
+    assert.strictEqual(
+      check.upgradeUrl,
+      `https://www.wix.com/apps/upgrade/4bf163d4-50ce-46f8-8e30-9ac3766e312f?appInstanceId=${testInstanceId}`,
+    );
 
     // assertQuotaAvailable passes now
     const allowedResult = await assertQuotaAvailable(testInstanceId);

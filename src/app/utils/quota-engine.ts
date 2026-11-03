@@ -56,15 +56,8 @@ export async function checkQuotaAvailable(instanceId: string): Promise<QuotaChec
   const allowed = usage.labelsGenerated < subscription.monthlyQuota;
   const remaining = Math.max(0, subscription.monthlyQuota - usage.labelsGenerated);
 
-  const appDefId = process.env.NEXT_PUBLIC_WIX_APP_ID || '';
-  const upgradePackageId =
-    subscription.planType === 'FREE'
-      ? SUBSCRIPTION_PLANS.STARTER.wixPackageId
-      : SUBSCRIPTION_PLANS.UNLIMITED.wixPackageId;
-
-  const upgradeUrl = appDefId
-    ? `https://www.wix.com/app-market/checkout?appDefinitionId=${appDefId}&packageId=${upgradePackageId}`
-    : undefined;
+  const appDefId = process.env.NEXT_PUBLIC_WIX_APP_ID || '4bf163d4-50ce-46f8-8e30-9ac3766e312f';
+  const upgradeUrl = appDefId ? `https://www.wix.com/apps/upgrade/${appDefId}?appInstanceId=${instanceId}` : undefined;
 
   return {
     allowed,

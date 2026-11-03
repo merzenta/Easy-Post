@@ -60,10 +60,13 @@ export function QuotaExceededUpgradeModal({
   const handleUpgrade = (targetTier: PlanTierType) => {
     const targetConfig = SUBSCRIPTION_PLANS[targetTier];
     showToast({
-      message: `Opening Wix App Market Checkout for ${targetConfig.name}...`,
+      message: `Opening Wix Upgrade for ${targetConfig.name}...`,
       type: 'standard',
     });
-    openWixUpgradeCheckout(targetConfig.wixPackageId);
+    openWixUpgradeCheckout({
+      instanceId: summary?.subscription?.instanceId,
+      packageId: targetConfig.wixPackageId,
+    });
     onClose();
   };
 

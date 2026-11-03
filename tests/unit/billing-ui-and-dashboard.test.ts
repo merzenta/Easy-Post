@@ -37,16 +37,25 @@ test('Billing Dashboard UI & Upgrade Modal Unit Tests', async (t) => {
     assert.strictEqual(unlimited.yearlyDiscountPercent, 10);
   });
 
-  await t.test('generates valid Wix App Market hosted checkout URLs', () => {
-    const starterUrl = getWixUpgradeCheckoutUrl(SUBSCRIPTION_PLANS.STARTER.wixPackageId);
-    assert.ok(starterUrl.startsWith('https://www.wix.com/app-market/checkout?'));
+  await t.test('generates valid Wix App upgrade URLs with appInstanceId', () => {
+    const instanceUpgradeUrl = getWixUpgradeCheckoutUrl({
+      instanceId: '38e7409d-1d10-476a-b326-b35747e507e1',
+    });
+    assert.strictEqual(
+      instanceUpgradeUrl,
+      'https://www.wix.com/apps/upgrade/4bf163d4-50ce-46f8-8e30-9ac3766e312f?appInstanceId=38e7409d-1d10-476a-b326-b35747e507e1',
+    );
+
+    const starterUrl = getWixUpgradeCheckoutUrl({
+      instanceId: '38e7409d-1d10-476a-b326-b35747e507e1',
+      packageId: SUBSCRIPTION_PLANS.STARTER.wixPackageId,
+    });
+    assert.ok(starterUrl.startsWith('https://www.wix.com/apps/upgrade/4bf163d4-50ce-46f8-8e30-9ac3766e312f?'));
+    assert.ok(starterUrl.includes('appInstanceId=38e7409d-1d10-476a-b326-b35747e507e1'));
     assert.ok(starterUrl.includes('packageId=starter'));
 
-    const unlimitedUrl = getWixUpgradeCheckoutUrl(SUBSCRIPTION_PLANS.UNLIMITED.wixPackageId);
-    assert.ok(unlimitedUrl.includes('packageId=unlimited'));
-
     const genericUrl = getWixUpgradeCheckoutUrl();
-    assert.ok(genericUrl.includes('appDefinitionId='));
+    assert.ok(genericUrl.startsWith('https://www.wix.com/apps/upgrade/'));
   });
 
   await t.test('calculates correct visual progress percentages and skins across quota tiers', () => {
