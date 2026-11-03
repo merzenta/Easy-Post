@@ -1,5 +1,5 @@
 import { useSDK } from '@/app/utils/wix-sdk.client-only';
-import { Box, Card, Text, TextButton } from '@wix/design-system';
+import { Card, Text, TextButton } from '@wix/design-system';
 import { WixPageId } from '@/app/utils/navigation.const';
 
 export function ActivationDetailsCard() {
@@ -12,7 +12,7 @@ export function ActivationDetailsCard() {
       <Card.Divider />
       <Card.Content>
         <Text>To apply your custom shipping rate logic, activate it as follows:</Text>
-        <Box paddingTop='SP3'>
+        <div style={{ paddingTop: '16px' }}>
           <Text>
             <ol style={{ marginBottom: '0' }}>
               <li style={{ marginBottom: '0', marginLeft: '24px' }}>
@@ -30,7 +30,7 @@ export function ActivationDetailsCard() {
               </li>
             </ol>
           </Text>
-        </Box>
+        </div>
       </Card.Content>
     </Card>
   );

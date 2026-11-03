@@ -264,7 +264,7 @@ export function ShipmentDetailsModal({ isOpen, onClose, shipment, orderNumber, o
           </Layout>
 
           {/* Bottom Identifiers & Timestamps */}
-          <Box direction='horizontal' align='space-between' verticalAlign='middle' padding='SP1 SP2'>
+          <Box direction='horizontal' align='space-between' verticalAlign='middle' padding='4px 8px'>
             <Box direction='horizontal' gap='SP1' verticalAlign='middle'>
               <Text size='tiny' secondary style={{ fontFamily: 'monospace' }}>
                 EasyPost ID: {shipment.easypost_shipment_id || shipment.id}

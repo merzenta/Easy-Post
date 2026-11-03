@@ -18,12 +18,12 @@ export function ShippingMethodSummary() {
       <Card.Header title='Recent orders' />
       <Card.Divider />
       <Card.Content>
-        <Box direction='vertical' paddingBottom='SP3'>
+        <Box direction='vertical' paddingBottom='16px'>
           {isLoading || orders?.length ? (
             (isLoading ? [null, null, null] : orders!).map((order, index) => (
               <React.Fragment key={index}>
                 {index > 0 && <Divider skin='light' />}
-                <Box key={index} verticalAlign='middle' align='space-between' paddingTop='SP2' paddingBottom='SP1'>
+                <Box key={index} verticalAlign='middle' align='space-between' paddingTop='8px' paddingBottom='4px'>
                   <Box direction='vertical'>
                     {isLoading ? (
                       <>
@@ -67,7 +67,7 @@ export function ShippingMethodSummary() {
             </Text>
           )}
         </Box>
-        <Box align='right' paddingTop='SP1'>
+        <Box align='right' paddingTop='4px'>
           <TextButton onClick={() => navigate(WixPageId.MANAGE_ORDERS)} size='small' suffixIcon={<ArrowRight />}>
             See all orders
           </TextButton>
