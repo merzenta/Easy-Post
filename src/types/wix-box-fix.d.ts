@@ -6,4 +6,3 @@ declare module 'react' {
     onResizeCapture?: ReactEventHandler<T> | undefined;
   }
 }
-
