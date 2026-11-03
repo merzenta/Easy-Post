@@ -3,6 +3,7 @@
 ## 1. Architectural Overview
 
 The application utilizes a production PostgreSQL Database persistence engine powered by Prisma ORM:
+
 1. **Production Relational Database (`prisma-store.ts`)**:
    - PostgreSQL support via Prisma ORM for high concurrency (Neon, Supabase, AWS RDS Aurora).
    - Strict `DATABASE_URL` enforcement in `src/app/utils/prisma.ts` and `src/app/repositories/index.ts`. If `DATABASE_URL` is omitted, the app throws a descriptive error immediately.
@@ -51,16 +52,16 @@ model Shipment {
   trackingCode       String?         @map("tracking_code")
   trackerId          String?         @map("tracker_id")
   wixFulfillmentId   String?         @map("wix_fulfillment_id")
-  
+
   senderAddress      Json            @map("sender_address")
   recipientAddress   Json            @map("recipient_address")
   parcelData         Json            @map("parcel_data")
   ratesData          Json?           @map("rates_data")
-  
+
   labelUrl           String?         @map("label_url")
   labelFormat        String          @default("PDF") @map("label_format")
   scanFormId         String?         @map("scan_form_id")
-  
+
   items              ShipmentItem[]
   createdAt          DateTime        @default(now()) @map("created_at")
   updatedAt          DateTime        @updatedAt @map("updated_at")

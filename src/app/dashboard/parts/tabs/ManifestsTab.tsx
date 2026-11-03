@@ -109,71 +109,81 @@ export function ManifestsTab() {
           </Card.Content>
         ) : (
           <div style={{ width: '100%', overflowX: 'auto' }}>
-            <Table
-              data={scanForms}
-              columns={[
-                {
-                  title: 'Date',
-                  render: (row) => (
-                    <Text size='small'>
-                      {new Date(row.created_at).toLocaleDateString('en-US', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </Text>
-                  ),
-                  width: '180px',
-                },
-                {
-                  title: 'SCAN Form ID',
-                  render: (row) => (
-                    <div style={{ minWidth: 0, maxWidth: '340px', overflow: 'hidden' }}>
-                      <Text weight='bold' size='small' ellipsis title={row.easypost_scan_form_id}>
-                        {row.easypost_scan_form_id}
+            <div style={{ minWidth: '950px', width: '100%' }}>
+              <Table
+                data={scanForms}
+                columns={[
+                  {
+                    title: 'Date',
+                    render: (row) => (
+                      <Text size='small'>
+                        {new Date(row.created_at).toLocaleDateString('en-US', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </Text>
-                    </div>
-                  ),
-                  width: '350px',
-                },
-                {
-                  title: 'Shipments',
-                  render: (row) => (
-                    <Text size='small'>
-                      {row.shipment_count} {row.shipment_count === 1 ? 'item' : 'items'}
-                    </Text>
-                  ),
-                  width: '120px',
-                },
-                {
-                  title: 'Status',
-                  render: (row) => (
-                    <Badge skin={row.status === 'created' ? 'success' : 'danger'} size='small'>
-                      {row.status.toUpperCase()}
-                    </Badge>
-                  ),
-                  width: '120px',
-                },
-                {
-                  title: 'Actions',
-                  render: (row) => (
-                    <Button
-                      size='tiny'
-                      priority='secondary'
-                      disabled={!row.form_url}
-                      onClick={() => row.form_url && window.open(row.form_url, '_blank')}
-                    >
-                      Download Document
-                    </Button>
-                  ),
-                  width: '180px',
-                },
-              ]}
-            >
-              <Table.Content />
-            </Table>
+                    ),
+                    width: '180px',
+                  },
+                  {
+                    title: 'SCAN Form ID',
+                    render: (row) => (
+                      <div
+                        style={{
+                          minWidth: 0,
+                          maxWidth: '340px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <Text weight='bold' size='small' ellipsis title={row.easypost_scan_form_id}>
+                          {row.easypost_scan_form_id}
+                        </Text>
+                      </div>
+                    ),
+                    width: '350px',
+                  },
+                  {
+                    title: 'Shipments',
+                    render: (row) => (
+                      <Text size='small'>
+                        {row.shipment_count} {row.shipment_count === 1 ? 'item' : 'items'}
+                      </Text>
+                    ),
+                    width: '120px',
+                  },
+                  {
+                    title: 'Status',
+                    render: (row) => (
+                      <Badge skin={row.status === 'created' ? 'success' : 'danger'} size='small'>
+                        {row.status.toUpperCase()}
+                      </Badge>
+                    ),
+                    width: '120px',
+                  },
+                  {
+                    title: 'Actions',
+                    render: (row) => (
+                      <Button
+                        size='tiny'
+                        priority='secondary'
+                        disabled={!row.form_url}
+                        onClick={() => row.form_url && window.open(row.form_url, '_blank')}
+                      >
+                        Download Document
+                      </Button>
+                    ),
+                    width: '180px',
+                  },
+                ]}
+              >
+                <Table.Content />
+              </Table>
+            </div>
           </div>
         )}
       </Card>

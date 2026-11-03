@@ -107,12 +107,14 @@ export function TrackingTab() {
           }
         />
         <Card.Divider />
-        <Card.Content>
-          {isLoading ? (
+        {isLoading ? (
+          <Card.Content>
             <Box height='250px' verticalAlign='middle' align='center'>
               <Loader size='medium' />
             </Box>
-          ) : filtered.length === 0 ? (
+          </Card.Content>
+        ) : filtered.length === 0 ? (
+          <Card.Content>
             <EmptyState
               title='No tracked shipments found'
               subtitle={
@@ -121,99 +123,110 @@ export function TrackingTab() {
                   : 'Created shipments will appear here with instant tracking links.'
               }
             />
-          ) : (
-            <Table
-              data={filtered}
-              columns={[
-                {
-                  title: 'Tracking Code',
-                  render: (row) => (
-                    <div
-                      style={{
-                        minWidth: 0,
-                        maxWidth: '250px',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '4px',
-                      }}
-                    >
-                      <Text weight='bold' size='small' ellipsis title={row.tracking_code || 'Pending Purchase'}>
-                        {row.tracking_code || 'Pending Purchase'}
-                      </Text>
-                      <Text size='tiny' secondary ellipsis title={`${row.carrier} — ${row.service}`}>
-                        {row.carrier} — {row.service}
-                      </Text>
-                    </div>
-                  ),
-                  width: '260px',
-                },
-                {
-                  title: 'Wix Order',
-                  render: (row) => (
-                    <Text
-                      size='small'
-                      weight='bold'
-                      ellipsis
-                      style={{ maxWidth: '100px' }}
-                      title={`Wix Order: ${row.wix_order_id}`}
-                    >
-                      #{row.wix_order_id ? row.wix_order_id.slice(0, 8) : 'N/A'}
-                    </Text>
-                  ),
-                  width: '110px',
-                },
-                {
-                  title: 'Recipient',
-                  render: (row) => (
-                    <Text size='small'>
-                      {row.recipient_address.name} ({row.recipient_address.city}, {row.recipient_address.state})
-                    </Text>
-                  ),
-                },
-                {
-                  title: 'Carrier',
-                  render: (row) => <Text size='small'>{row.carrier}</Text>,
-                  width: '100px',
-                },
-                {
-                  title: 'Status',
-                  render: (row) => getStatusBadge(row.status === 'LABEL_PURCHASED' ? 'in_transit' : row.status),
-                  width: '150px',
-                },
-                {
-                  title: 'Actions',
-                  render: (row) => {
-                    const hasCode = Boolean(row.tracking_code);
-                    return (
-                      <Box gap='SP2'>
-                        <Button
-                          size='tiny'
-                          priority='secondary'
-                          disabled={!hasCode}
-                          onClick={() => row.tracking_code && handleOpenEasyPostTracker(row.tracking_code)}
-                        >
-                          View Tracker
-                        </Button>
-                        <Button
-                          size='tiny'
-                          priority='secondary'
-                          disabled={!hasCode || updatingCode === row.tracking_code}
-                          onClick={() => row.tracking_code && handleRefreshTracking(row.tracking_code, row.carrier)}
-                        >
-                          {updatingCode === row.tracking_code ? 'Updating...' : 'Refresh'}
-                        </Button>
-                      </Box>
-                    );
+          </Card.Content>
+        ) : (
+          <div style={{ width: '100%', overflowX: 'auto' }}>
+            <div style={{ minWidth: '950px', width: '100%' }}>
+              <Table
+                data={filtered}
+                columns={[
+                  {
+                    title: 'Tracking Code',
+                    render: (row) => (
+                      <div
+                        style={{
+                          minWidth: 0,
+                          maxWidth: '240px',
+                          overflow: 'hidden',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                        }}
+                      >
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <Text weight='bold' size='small' ellipsis title={row.tracking_code || 'Pending Purchase'}>
+                            {row.tracking_code || 'Pending Purchase'}
+                          </Text>
+                        </div>
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <Text size='tiny' secondary ellipsis title={`${row.carrier} — ${row.service}`}>
+                            {row.carrier} — {row.service}
+                          </Text>
+                        </div>
+                      </div>
+                    ),
+                    width: '250px',
                   },
-                  width: '200px',
-                },
-              ]}
-            >
-              <Table.Content />
-            </Table>
-          )}
-        </Card.Content>
+                  {
+                    title: 'Wix Order',
+                    render: (row) => (
+                      <div
+                        style={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          maxWidth: '100px',
+                        }}
+                      >
+                        <Text size='small' weight='bold' ellipsis title={`Wix Order: ${row.wix_order_id}`}>
+                          #{row.wix_order_id ? row.wix_order_id.slice(0, 8) : 'N/A'}
+                        </Text>
+                      </div>
+                    ),
+                    width: '110px',
+                  },
+                  {
+                    title: 'Recipient',
+                    render: (row) => (
+                      <Text size='small' style={{ wordBreak: 'break-word' }}>
+                        {row.recipient_address.name} ({row.recipient_address.city}, {row.recipient_address.state})
+                      </Text>
+                    ),
+                  },
+                  {
+                    title: 'Carrier',
+                    render: (row) => <Text size='small'>{row.carrier}</Text>,
+                    width: '100px',
+                  },
+                  {
+                    title: 'Status',
+                    render: (row) => getStatusBadge(row.status === 'LABEL_PURCHASED' ? 'in_transit' : row.status),
+                    width: '140px',
+                  },
+                  {
+                    title: 'Actions',
+                    render: (row) => {
+                      const hasCode = Boolean(row.tracking_code);
+                      return (
+                        <Box gap='SP2'>
+                          <Button
+                            size='tiny'
+                            priority='secondary'
+                            disabled={!hasCode}
+                            onClick={() => row.tracking_code && handleOpenEasyPostTracker(row.tracking_code)}
+                          >
+                            View Tracker
+                          </Button>
+                          <Button
+                            size='tiny'
+                            priority='secondary'
+                            disabled={!hasCode || updatingCode === row.tracking_code}
+                            onClick={() => row.tracking_code && handleRefreshTracking(row.tracking_code, row.carrier)}
+                          >
+                            {updatingCode === row.tracking_code ? 'Updating...' : 'Refresh'}
+                          </Button>
+                        </Box>
+                      );
+                    },
+                    width: '180px',
+                  },
+                ]}
+              >
+                <Table.Content />
+              </Table>
+            </div>
+          </div>
+        )}
       </Card>
     </Box>
   );

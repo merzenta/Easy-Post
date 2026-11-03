@@ -28,6 +28,7 @@ import {
   formatCarrierService,
   OrderShippingChoice,
 } from '@/app/utils/rate-matcher';
+import { QuotaExceededUpgradeModal } from '@/app/dashboard/parts/modals/QuotaExceededUpgradeModal';
 import { EasyPostRate, EasyPostShipment } from '@/app/types/easypost.model';
 
 export interface ShipmentModalOrder {
@@ -203,6 +204,7 @@ export function ShipmentPreparationModal({
   // Purchasing & Success state
   const [isBuying, setIsBuying] = useState(false);
   const [purchasedLabel, setPurchasedLabel] = useState<any>(null);
+  const [isQuotaModalOpen, setIsQuotaModalOpen] = useState(false);
 
   // Sync recipient, address, cartonization, and checkout choice from Wix Order schema
   useEffect(() => {
@@ -494,10 +496,19 @@ export function ShipmentPreparationModal({
       }
     } catch (err: any) {
       console.error('Label purchase error:', err);
-      showToast({
-        message: `Failed to purchase label: ${err?.message || 'Unknown error'}`,
-        type: 'error',
-      });
+      const errMsg = err?.message || 'Unknown error';
+      if (
+        errMsg.includes('MONTHLY_LABEL_QUOTA_EXCEEDED') ||
+        errMsg.toLowerCase().includes('quota') ||
+        errMsg.toLowerCase().includes('limit reached')
+      ) {
+        setIsQuotaModalOpen(true);
+      } else {
+        showToast({
+          message: `Failed to purchase label: ${errMsg}`,
+          type: 'error',
+        });
+      }
     } finally {
       setIsBuying(false);
     }
@@ -878,6 +889,17 @@ export function ShipmentPreparationModal({
           </Box>
         </Box>
       </CustomModalLayout>
+
+      <QuotaExceededUpgradeModal
+        isOpen={isQuotaModalOpen}
+        onClose={() => setIsQuotaModalOpen(false)}
+        onUpgradeSuccess={() => {
+          showToast({
+            message: 'Plan upgraded successfully! You can now proceed to purchase postage.',
+            type: 'success',
+          });
+        }}
+      />
     </Modal>
   );
 }

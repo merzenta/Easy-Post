@@ -50,4 +50,3 @@ sequenceDiagram
    - Normalizes items to ounces and inches.
    - Evaluates standard presets (`Small Box`, `Medium Box`, `Large Box`, `Flat Rate Envelope`).
    - Falls back to custom parcel dimensions when preset bounds are exceeded.
-

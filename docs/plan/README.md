@@ -20,11 +20,10 @@ docs/plan/
 
 ## 2. Summary of Engineering Plans
 
-| Plan Document | Primary Focus | Key Deliverables & Specifications |
-| :--- | :--- | :--- |
-| [**01. Architecture & Storage**](./01_EASYPOST_ARCHITECTURE_AND_STORAGE_PLAN.md) | Multi-Tenant Data Layer | Production PostgreSQL schema via Prisma ORM, strict `DATABASE_URL` requirement (no `.storage`), AES-256-GCM credential encryption. |
-| [**02. Shipping Rates SPI**](./02_SHIPPING_RATES_SPI_PLAN.md) | Real-Time Checkout Rates | Wix Shipping Rates SPI integration, 3D box packing presets, state code normalization, carrier prefix matching (`USPS`, `FedExDefault`), 5-min TTL rate cache, fallback pricing. |
+| Plan Document                                                                                   | Primary Focus                 | Key Deliverables & Specifications                                                                                                                                                 |
+| :---------------------------------------------------------------------------------------------- | :---------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [**01. Architecture & Storage**](./01_EASYPOST_ARCHITECTURE_AND_STORAGE_PLAN.md)                | Multi-Tenant Data Layer       | Production PostgreSQL schema via Prisma ORM, strict `DATABASE_URL` requirement (no `.storage`), AES-256-GCM credential encryption.                                                |
+| [**02. Shipping Rates SPI**](./02_SHIPPING_RATES_SPI_PLAN.md)                                   | Real-Time Checkout Rates      | Wix Shipping Rates SPI integration, 3D box packing presets, state code normalization, carrier prefix matching (`USPS`, `FedExDefault`), 5-min TTL rate cache, fallback pricing.   |
 | [**03. Label Generation & Orders Workflow**](./03_LABEL_GENERATION_AND_ORDERS_WORKFLOW_PLAN.md) | Fulfillment & Document Access | Dynamic action button replacement in `OrdersTab` (`Create Shipment` $\to$ `Print Label` + `View Details`), permanent `label_url` storage in DB, dedicated `ShipmentDetailsModal`. |
-| [**04. Fulfillment Sync & Tracking**](./04_FULFILLMENT_SYNC_AND_TRACKING_PLAN.md) | Lifecycle Automation | Automated sync with Wix eCommerce Order Fulfillment API (`orderFulfillments.createFulfillment`), EasyPost live tracking queries, and delivery status updates. |
-| [**05. Observability & Testing**](./05_OBSERVABILITY_AND_TESTING_PLAN.md) | Reliability & QA | Enterprise JSON file logging (`spi-rates.log`, `requests.log`, `app-error.log`), Wix JWS signature decoding, carrier error unpacking, and 66+ unit tests passing. |
-
+| [**04. Fulfillment Sync & Tracking**](./04_FULFILLMENT_SYNC_AND_TRACKING_PLAN.md)               | Lifecycle Automation          | Automated sync with Wix eCommerce Order Fulfillment API (`orderFulfillments.createFulfillment`), EasyPost live tracking queries, and delivery status updates.                     |
+| [**05. Observability & Testing**](./05_OBSERVABILITY_AND_TESTING_PLAN.md)                       | Reliability & QA              | Enterprise JSON file logging (`spi-rates.log`, `requests.log`, `app-error.log`), Wix JWS signature decoding, carrier error unpacking, and 66+ unit tests passing.                 |

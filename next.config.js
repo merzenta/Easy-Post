@@ -11,6 +11,22 @@ const nextConfig = {
         source: '/api/shipping-rates',
         destination: '/api/shipping-rates/v1/getRates',
       },
+      {
+        source: '/api/webhooks/install',
+        destination: '/api/webhooks/v1/install',
+      },
+      {
+        source: '/api/webhooks/uninstall',
+        destination: '/api/webhooks/v1/uninstall',
+      },
+      {
+        source: '/api/webhooks/billing',
+        destination: '/api/webhooks/v1/billing',
+      },
+      {
+        source: '/api/webhooks/orders',
+        destination: '/api/webhooks/v1/orders',
+      },
     ];
   },
   webpack: (config, { isServer }) => {

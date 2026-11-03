@@ -3,6 +3,7 @@
 ## 1. UI Components Overview
 
 The billing user experience consists of two components:
+
 1. **"Plans & Billing" Dashboard Tab (`BillingTab.tsx`)**: Provides full visibility into the merchant's current plan, monthly quota consumption, renewal dates, and upgrade options.
 2. **Quota Exceeded Upgrade Modal (`QuotaExceededUpgradeModal.tsx`)**: An in-flow modal that pops up whenever a merchant tries to buy a label after exhausting their monthly allowance.
 
@@ -19,7 +20,7 @@ The billing user experience consists of two components:
 +-----------------------------------------------------------------------------------------+
 | CURRENT PLAN & USAGE                                                                    |
 |                                                                                         |
-|  Active Plan: Free Trial Plan [ACTIVE]                   Cycle Resets: Dec 1, 2026     |
+|  Active Plan: Basic [ACTIVE]                             Cycle Resets: Dec 1, 2026      |
 |                                                                                         |
 |  Monthly Label Usage: 4 of 5 labels generated (80% used)                                |
 |  [========================================================-------------]                |
@@ -28,19 +29,21 @@ The billing user experience consists of two components:
 | AVAILABLE SUBSCRIPTION PLANS                                                            |
 |                                                                                         |
 |  +-------------------+  +-------------------+  +-------------------+  +---------------+ |
-|  | FREE PLAN         |  | STARTER PLAN      |  | GROWTH PLAN       |  | UNLIMITED     | |
-|  | $0 / month        |  | $5 / month        |  | $10 / month       |  | $20 / month   | |
-|  |                   |  |                   |  |                   |  |               | |
+|  | BASIC (Free)      |  | STARTER           |  | GROWTH            |  | UNLIMITED     | |
+|  | Free to Install   |  | $5 / month        |  | $10 / month       |  | $20 / month   | |
+|  | (Product: basic)  |  | (20% yr discount) |  | (20% yr discount) |  | (10% yr disc) | |
+|  |                   |  | (Product: starter)|  | (Product: growth) |  | (unlimited)   | |
 |  | * 5 Labels / mo   |  | * 50 Labels / mo  |  | * 100 Labels / mo |  | * Unlimited   | |
 |  | * Live Rates      |  | * Box Packer      |  | * Priority Sync   |  | * No Limits   | |
 |  | * SCAN Forms      |  | * Tracking Sync   |  | * Batch Orders    |  | * VIP Support | |
 |  |                   |  |                   |  |                   |  |               | |
-|  | [ Current Plan ]  |  | [ Upgrade ($5/mo)]|  | [Upgrade ($10/mo)]|  | [Go Unlimited]| |
+|  | [ Active Plan ]   |  | [Upgrade ($5/mo)] |  | [Upgrade ($10/mo)]|  | [Go Unlimited]| |
 |  +-------------------+  +-------------------+  +-------------------+  +---------------+ |
 +-----------------------------------------------------------------------------------------+
 ```
 
 ### Component Implementation Details:
+
 - **Usage Meter**: Visual bar rendering current usage vs quota. Dynamically colors:
   - Green (`< 75%`)
   - Warning Orange (`75% - 99%`)
@@ -69,13 +72,13 @@ export interface QuotaExceededUpgradeModalProps {
 ```
 
 ### Modal Features:
+
 1. **Title**: `Monthly Label Limit Reached`
 2. **Contextual Messaging**:
-   *"You have reached your limit of 5 shipping labels for the Free Plan this month. Your quota will automatically reset on Dec 1, 2026."*
+   _"You have reached your limit of 5 shipping labels for the Free Plan this month. Your quota will automatically reset on Dec 1, 2026."_
 3. **Upgrade Value Proposition**:
-   *"Upgrade to the **Starter Plan ($5/month)** to unlock 50 shipping labels immediately, or **Unlimited ($20/month)** for unrestricted fulfillment."*
+   _"Upgrade to the **Starter Plan ($5/month)** to unlock 50 shipping labels immediately, or **Unlimited ($20/month)** for unrestricted fulfillment."_
 4. **Action Buttons**:
    - Primary: `Upgrade to Starter ($5/mo)` &rarr; opens Wix App Market Checkout.
    - Secondary: `Upgrade to Unlimited ($20/mo)`.
    - Tertiary: `Cancel / Wait for Reset`.
-

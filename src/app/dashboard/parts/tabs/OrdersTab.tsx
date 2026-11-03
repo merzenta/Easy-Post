@@ -189,126 +189,136 @@ export function OrdersTab() {
           </Card.Content>
         ) : (
           <div style={{ width: '100%', overflowX: 'auto' }}>
-            <Table
-              data={tableData}
-              columns={[
-                {
-                  title: 'Order #',
-                  render: (row) => <Text weight='bold'>#{row.number}</Text>,
-                  width: '80px',
-                },
-                {
-                  title: 'Date',
-                  render: (row) => <Text size='small'>{row.createdDate}</Text>,
-                  width: '95px',
-                },
-                {
-                  title: 'Customer',
-                  render: (row) => (
-                    <div style={{ minWidth: 0, maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      <Text size='small' ellipsis title={row.customer}>
-                        {row.customer}
+            <div style={{ minWidth: '1080px', width: '100%' }}>
+              <Table
+                data={tableData}
+                columns={[
+                  {
+                    title: 'Order #',
+                    render: (row) => <Text weight='bold'>#{row.number}</Text>,
+                    width: '85px',
+                  },
+                  {
+                    title: 'Date',
+                    render: (row) => <Text size='small'>{row.createdDate}</Text>,
+                    width: '100px',
+                  },
+                  {
+                    title: 'Customer',
+                    render: (row) => (
+                      <div
+                        style={{
+                          minWidth: 0,
+                          maxWidth: '125px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <Text size='small' ellipsis title={row.customer}>
+                          {row.customer}
+                        </Text>
+                      </div>
+                    ),
+                    width: '130px',
+                  },
+                  {
+                    title: 'Destination',
+                    render: (row) => (
+                      <div style={{ minWidth: 0, maxWidth: '165px', overflow: 'hidden', wordBreak: 'break-word' }}>
+                        <Text size='small' style={{ wordBreak: 'break-word' }}>
+                          {row.location}
+                        </Text>
+                      </div>
+                    ),
+                    width: '170px',
+                  },
+                  {
+                    title: 'Shipping Option',
+                    render: (row) => (
+                      <div style={{ minWidth: 0, maxWidth: '175px', overflow: 'hidden', wordBreak: 'break-word' }}>
+                        <Text size='small' style={{ wordBreak: 'break-word' }}>
+                          {row.shippingMethod}
+                        </Text>
+                      </div>
+                    ),
+                    width: '180px',
+                  },
+                  {
+                    title: 'Total',
+                    render: (row) => (
+                      <Text size='small' weight='bold'>
+                        {row.total}
                       </Text>
-                    </div>
-                  ),
-                  width: '120px',
-                },
-                {
-                  title: 'Destination',
-                  render: (row) => (
-                    <div style={{ minWidth: 0, maxWidth: '150px', overflow: 'hidden', wordBreak: 'break-word' }}>
-                      <Text size='small' style={{ wordBreak: 'break-word' }}>
-                        {row.location}
-                      </Text>
-                    </div>
-                  ),
-                  width: '150px',
-                },
-                {
-                  title: 'Shipping Option',
-                  render: (row) => (
-                    <div style={{ minWidth: 0, maxWidth: '160px', overflow: 'hidden', wordBreak: 'break-word' }}>
-                      <Text size='small' style={{ wordBreak: 'break-word' }}>
-                        {row.shippingMethod}
-                      </Text>
-                    </div>
-                  ),
-                  width: '160px',
-                },
-                {
-                  title: 'Total',
-                  render: (row) => (
-                    <Text size='small' weight='bold'>
-                      {row.total}
-                    </Text>
-                  ),
-                  width: '75px',
-                },
-                {
-                  title: 'Status',
-                  render: (row) => {
-                    if (row.hasLabel) {
+                    ),
+                    width: '85px',
+                  },
+                  {
+                    title: 'Status',
+                    render: (row) => {
+                      if (row.hasLabel) {
+                        return (
+                          <Badge skin='success' size='small'>
+                            {row.matchedShipment?.carrier ? `${row.matchedShipment.carrier} Labeled` : 'Labeled'}
+                          </Badge>
+                        );
+                      }
                       return (
-                        <Badge skin='success' size='small'>
-                          {row.matchedShipment?.carrier ? `${row.matchedShipment.carrier} Labeled` : 'Labeled'}
+                        <Badge skin={row.isFulfilled ? 'success' : 'warning'} size='small'>
+                          {row.isFulfilled ? 'Fulfilled' : 'Unfulfilled'}
                         </Badge>
                       );
-                    }
-                    return (
-                      <Badge skin={row.isFulfilled ? 'success' : 'warning'} size='small'>
-                        {row.isFulfilled ? 'Fulfilled' : 'Unfulfilled'}
-                      </Badge>
-                    );
+                    },
+                    width: '130px',
                   },
-                  width: '120px',
-                },
-                {
-                  title: 'Action',
-                  render: (row) => {
-                    if (row.hasLabel && row.matchedShipment?.label_url) {
-                      return (
-                        <Box gap='SP1' verticalAlign='middle'>
-                          <Button
-                            size='tiny'
-                            priority='primary'
-                            onClick={() => handlePrintLabel(row.matchedShipment!.label_url!)}
-                          >
-                            Print Label
-                          </Button>
-                          <Button
-                            size='tiny'
-                            priority='secondary'
-                            onClick={() => handleOpenDetailsModal(row.matchedShipment!, row.number, row.rawOrder)}
-                          >
-                            View Details
-                          </Button>
-                          {row.fulfillmentStatus !== 'FULFILLED' && !row.matchedShipment.wix_fulfillment_id && (
+                  {
+                    title: 'Action',
+                    render: (row) => {
+                      if (row.hasLabel && row.matchedShipment?.label_url) {
+                        return (
+                          <Box gap='SP1' verticalAlign='middle'>
+                            <Button
+                              size='tiny'
+                              priority='primary'
+                              onClick={() => handlePrintLabel(row.matchedShipment!.label_url!)}
+                            >
+                              Print Label
+                            </Button>
                             <Button
                               size='tiny'
                               priority='secondary'
-                              skin='standard'
-                              disabled={syncingOrderId === row.id}
-                              onClick={() => handleSyncFulfillment(row)}
+                              onClick={() => handleOpenDetailsModal(row.matchedShipment!, row.number, row.rawOrder)}
                             >
-                              {syncingOrderId === row.id ? 'Syncing...' : 'Sync Wix'}
+                              View Details
                             </Button>
-                          )}
-                        </Box>
-                      );
-                    }
+                            {row.fulfillmentStatus !== 'FULFILLED' && !row.matchedShipment.wix_fulfillment_id && (
+                              <Button
+                                size='tiny'
+                                priority='secondary'
+                                skin='standard'
+                                disabled={syncingOrderId === row.id}
+                                onClick={() => handleSyncFulfillment(row)}
+                              >
+                                {syncingOrderId === row.id ? 'Syncing...' : 'Sync Wix'}
+                              </Button>
+                            )}
+                          </Box>
+                        );
+                      }
 
-                    return (
-                      <Button size='tiny' priority='primary' onClick={() => handleOpenFulfillModal(row.rawOrder)}>
-                        Create Shipment
-                      </Button>
-                    );
+                      return (
+                        <Button size='tiny' priority='primary' onClick={() => handleOpenFulfillModal(row.rawOrder)}>
+                          Create Shipment
+                        </Button>
+                      );
+                    },
+                    width: '180px',
                   },
-                  width: '185px',
-                },
-              ]}
-            >
-              <Table.Content />
-            </Table>
+                ]}
+              >
+                <Table.Content />
+              </Table>
+            </div>
           </div>
         )}
       </Card>

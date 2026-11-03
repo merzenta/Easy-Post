@@ -29,6 +29,29 @@ export const resolveInstanceId = async (appIdentifier: AppIdentifier): Promise<s
   return instanceId;
 };
 
+export const resolveInstanceWithBilling = async (
+  appIdentifier: AppIdentifier,
+): Promise<{ instanceId: string; billing?: any }> => {
+  let instanceId = appIdentifier.instanceId;
+  let billing: any = undefined;
+
+  if (appIdentifier.accessToken) {
+    try {
+      const appInstance = await parseAccessToken(appIdentifier.accessToken);
+      instanceId = instanceId || appInstance?.instance?.instanceId || appInstance?.instanceId;
+      billing = appInstance?.instance?.billing || appInstance?.billing;
+    } catch {
+      // Ignore token parsing error if fallback instanceId is available
+    }
+  }
+
+  if (!instanceId) {
+    throw new Error('app-data: Failed to resolve instanceId from provided token');
+  }
+
+  return { instanceId, billing };
+};
+
 /**
  * Converts MerchantSettings into the legacy ShippingAppData structure
  * so legacy dashboard forms and tests continue functioning seamlessly.

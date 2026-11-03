@@ -155,3 +155,78 @@ model TrackingRecord {
   @@index([instanceId, hasException])
   @@map("tracking_records")
 }
+
+// -------------------------------------------------------------
+// 6. Merchant Subscription & Billing State
+// -------------------------------------------------------------
+model MerchantSubscription {
+  id                 String    @id @default(uuid())
+  instanceId         String    @unique @map("instance_id")
+  planType           String    @default("FREE") @map("plan_type") // FREE, STARTER, GROWTH, UNLIMITED
+  status             String    @default("ACTIVE") @map("status")   // ACTIVE, CANCELLED, PAST_DUE, EXPIRED
+  monthlyQuota       Int       @default(5) @map("monthly_quota")   // 5, 50, 100, -1 (unlimited)
+  priceMonthly       Float     @default(0.0) @map("price_monthly")
+  
+  wixPackageId       String?   @map("wix_package_id")
+  wixSubscriptionId  String?   @map("wix_subscription_id")
+  
+  currentPeriodStart DateTime  @default(now()) @map("current_period_start")
+  currentPeriodEnd   DateTime  @map("current_period_end")
+  cancelledAt        DateTime? @map("cancelled_at")
+  
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  usageRecords       MonthlyUsage[]
+  usageLogs          SubscriptionUsageLog[]
+
+  @@index([instanceId, status])
+  @@map("merchant_subscriptions")
+}
+
+// -------------------------------------------------------------
+// 7. Monthly Quota Usage Aggregation
+// -------------------------------------------------------------
+model MonthlyUsage {
+  id                    String                @id @default(uuid())
+  instanceId            String                @map("instance_id")
+  billingCycleKey       String                @map("billing_cycle_key") // e.g. "2026-11"
+  labelsGenerated       Int                   @default(0) @map("labels_generated")
+  lastLabelGeneratedAt  DateTime?             @map("last_label_generated_at")
+  
+  subscriptionId        String?               @map("subscription_id")
+  subscription          MerchantSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
+
+  @@unique([instanceId, billingCycleKey])
+  @@index([instanceId, billingCycleKey])
+  @@map("monthly_usages")
+}
+
+// -------------------------------------------------------------
+// 8. Immutable Label Purchase Audit Trail
+// -------------------------------------------------------------
+model SubscriptionUsageLog {
+  id                 String                @id @default(uuid())
+  instanceId         String                @map("instance_id")
+  shipmentId         String                @map("shipment_id")
+  trackingCode       String?               @map("tracking_code")
+  carrier            String                @map("carrier")
+  service            String                @map("service")
+  rateAmount         Float                 @default(0.0) @map("rate_amount")
+  
+  planType           String                @map("plan_type")
+  quotaCountAfter    Int                   @map("quota_count_after")
+  
+  subscriptionId     String?               @map("subscription_id")
+  subscription       MerchantSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  createdAt          DateTime              @default(now()) @map("created_at")
+
+  @@index([instanceId, createdAt])
+  @@index([shipmentId])
+  @@map("subscription_usage_logs")
+}
+

@@ -13,6 +13,7 @@ import { OrdersTab } from '@/app/dashboard/parts/tabs/OrdersTab';
 import { ShipmentsTab } from '@/app/dashboard/parts/tabs/ShipmentsTab';
 import { ManifestsTab } from '@/app/dashboard/parts/tabs/ManifestsTab';
 import { TrackingTab } from '@/app/dashboard/parts/tabs/TrackingTab';
+import { BillingTab } from '@/app/dashboard/parts/tabs/BillingTab';
 import { SettingsTab } from '@/app/dashboard/parts/tabs/SettingsTab';
 
 export const ShippingRatesPageContent = ({}: {}) => {
@@ -114,6 +115,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
                 { id: 'shipments', title: 'Shipments & Labels' },
                 { id: 'manifests', title: 'SCAN Forms / Manifests' },
                 { id: 'tracking', title: 'Live Tracking' },
+                { id: 'billing', title: 'Plans & Billing' },
                 { id: 'settings', title: 'Carrier & API Settings' },
               ]}
             />
@@ -122,6 +124,7 @@ export const ShippingRatesPageContent = ({}: {}) => {
             {activeTab === 'shipments' && <ShipmentsTab />}
             {activeTab === 'manifests' && <ManifestsTab />}
             {activeTab === 'tracking' && <TrackingTab />}
+            {activeTab === 'billing' && <BillingTab onNavigateTab={(tab) => setActiveTab(tab)} />}
             {activeTab === 'settings' && (
               <SettingsTab currentAppData={currentShippingAppData} onAppDataChange={setCurrentShippingAppData} />
             )}

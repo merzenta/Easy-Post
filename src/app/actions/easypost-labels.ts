@@ -1,6 +1,8 @@
 'use server';
 
 import { merchantSettingsRepo, shipmentRepo } from '@/app/repositories';
+import { subscriptionRepo } from '@/app/repositories/subscription-repo';
+import { assertQuotaAvailable } from '@/app/utils/quota-engine';
 import { createEasyPostClient } from '@/app/utils/easypost-client';
 import { EasyPostShipment } from '@/app/types/easypost.model';
 import { AppIdentifier, resolveInstanceId } from '@/app/actions/app-data';
@@ -29,6 +31,9 @@ export async function buyShipmentLabelAction(
     throw new Error(`EasyPost API key not configured for store instance ${instanceId}`);
   }
 
+  // 1. Enforce monthly label quota guard before purchasing postage
+  await assertQuotaAvailable(instanceId);
+
   const client = createEasyPostClient(settings.apiKey);
 
   logger.info('BUYING_LABEL', 'Submitting postage label purchase to EasyPost', {
@@ -52,6 +57,22 @@ export async function buyShipmentLabelAction(
 
   if (!updated) {
     throw new Error(`Failed to update shipment status for ${shipmentId}`);
+  }
+
+  // 2. Atomically record quota usage and audit log
+  try {
+    await subscriptionRepo.recordLabelPurchaseUsage({
+      instanceId,
+      shipmentId,
+      trackingCode: bought.trackingCode,
+      carrier: bought.carrier || shipment.carrier,
+      service: bought.service || shipment.service,
+      rateAmount: bought.rateAmount || 0,
+    });
+  } catch (quotaErr) {
+    logger.warn('RECORD_USAGE_FAILED', 'Could not record label usage count in subscription store', {
+      error: quotaErr instanceof Error ? quotaErr.message : String(quotaErr),
+    });
   }
 
   // Auto-sync fulfillment to Wix

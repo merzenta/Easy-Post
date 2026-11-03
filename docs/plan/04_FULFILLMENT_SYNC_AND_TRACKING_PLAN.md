@@ -9,6 +9,7 @@ Once a shipping label is purchased, the app automatically transitions the Wix or
 ## 2. Automated Wix Fulfillment Sync
 
 When `buyShipmentLabelAction` succeeds:
+
 1. Calls `syncOrderFulfillmentAction`:
    - Passes `orderId`, `trackingCode`, and `carrierName`.
    - Invokes `@wix/ecom_order-fulfillments` API:
@@ -33,4 +34,3 @@ When `buyShipmentLabelAction` succeeds:
 - EasyPost automatically creates a Tracker when a shipment is purchased.
 - The tracking code and public URL (`tracker.public_url`) are stored on the shipment.
 - Delivery webhook events (`tracker.updated`) can update shipment status to `IN_TRANSIT` or `DELIVERED`.
-

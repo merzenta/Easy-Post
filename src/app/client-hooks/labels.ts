@@ -27,6 +27,7 @@ export const useBuyLabel = () => {
       void queryClient.invalidateQueries({ queryKey: ['shipments'] });
       void queryClient.invalidateQueries({ queryKey: ['orders'] });
       void queryClient.invalidateQueries({ queryKey: ['wix-orders'] });
+      void queryClient.invalidateQueries({ queryKey: ['subscription-summary'] });
     },
   });
   return mutateAsync;

@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server';
-import { wixAppClient } from '@/app/utils/wix-sdk.app';
-import { orders } from '@wix/ecom';
 import { shipmentRepo } from '@/app/repositories';
 import { EasyPostShipment } from '@/app/types/easypost.model';
 import { withRequestLogging } from '@/app/utils/request-logger';
+import { verifyAndParseWixWebhook } from '@/app/utils/wix-webhook-verifier';
+import { logger } from '@/app/utils/logger';
 
 interface WixWebhookOrderEntity {
   _id?: string;
@@ -64,38 +64,78 @@ interface WixWebhookOrderEntity {
   }>;
 }
 
+/**
+ * Health / Reachability check for Wix Dev Center and monitoring pings.
+ */
+export const GET = async function GET() {
+  return new Response(
+    JSON.stringify({
+      status: 'active',
+      webhook: 'wix.ecom.v1.orders',
+      timestamp: new Date().toISOString(),
+    }),
+    {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    },
+  );
+};
+
 export const POST = withRequestLogging(
   async function POST(request: NextRequest) {
     try {
-      console.info('Webhook::orders - received request');
-      const { eventType, instanceId, payload } = await wixAppClient.webhooks.processRequest(request, {
-        expectedEvents: [orders.onOrderApproved, orders.onOrderCanceled],
+      logger.info('WEBHOOK_ORDERS', 'Received orders webhook request');
+      const parsed = await verifyAndParseWixWebhook(request);
+
+      logger.info('WEBHOOK_ORDERS', 'Event processed', {
+        eventType: parsed.eventType,
+        instanceId: parsed.instanceId,
+        isVerified: parsed.isVerified,
+        verificationMethod: parsed.verificationMethod,
       });
 
-      console.info('Webhook::orders - event processed:', { eventType, instanceId });
+      const { eventType, instanceId, payload } = parsed;
 
       const entity: WixWebhookOrderEntity =
         (payload as { entity?: WixWebhookOrderEntity })?.entity ||
         (payload as { order?: WixWebhookOrderEntity })?.order ||
         (payload as WixWebhookOrderEntity);
 
-      const orderId = entity._id || entity.id;
+      const orderId = entity?._id || entity?.id;
       if (!orderId || !instanceId) {
-        console.warn('Webhook::orders - missing orderId or instanceId in payload');
-        return new Response('OK', { status: 200 });
+        logger.warn('WEBHOOK_ORDERS', 'Missing orderId or instanceId in payload', { parsed });
+        return new Response(JSON.stringify({ received: true, warning: 'missing orderId or instanceId' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
       }
 
-      const eventTypeStr = eventType as string;
-      if (eventTypeStr === 'wix.ecom.v1.order_approved' || eventTypeStr === 'orderApproved') {
+      const eventTypeStr = (eventType as string).toLowerCase();
+      if (
+        eventTypeStr === 'wix.ecom.v1.order_approved' ||
+        eventTypeStr === 'orderapproved' ||
+        eventTypeStr.includes('approved')
+      ) {
         await handleOrderApproved(instanceId, entity);
-      } else if (eventTypeStr === 'wix.ecom.v1.order_canceled' || eventTypeStr === 'orderCanceled') {
+      } else if (
+        eventTypeStr === 'wix.ecom.v1.order_canceled' ||
+        eventTypeStr === 'ordercanceled' ||
+        eventTypeStr.includes('canceled') ||
+        eventTypeStr.includes('cancelled')
+      ) {
         await handleOrderCanceled(instanceId, orderId);
       }
 
-      return new Response('OK', { status: 200 });
-    } catch (error) {
-      console.error('Webhook::orders - error processing webhook:', error);
-      return new Response('Error processing event', { status: 200 });
+      return new Response(JSON.stringify({ received: true, status: 'processed', orderId }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch (error: any) {
+      logger.error('WEBHOOK_ORDERS', 'Fatal error handling orders webhook', error);
+      return new Response(JSON.stringify({ received: true, error: error?.message || 'Error processing event' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
   },
   { moduleName: 'api/webhooks/v1/orders' },

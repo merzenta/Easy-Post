@@ -2,14 +2,14 @@
 
 ## 1. Wix Developer Center Pricing Configuration
 
-To monetize the application on Wix, configure the 4 pricing tiers in the **Wix Developers Center &rarr; Pricing & Plans**:
+Configured directly in the **Wix Developers Center &rarr; Pricing & Plans**:
 
-| Package ID (Dev Center) | Display Name | Billing Frequency | Price (USD) | Quota Metadata |
-| :--- | :--- | :--- | :--- | :--- |
-| `pkg_free_trial` | **Free Plan** | Monthly | $0.00 / mo | 5 labels / month |
-| `pkg_starter_50_labels` | **Starter Plan** | Monthly | $5.00 / mo | 50 labels / month |
-| `pkg_growth_100_labels` | **Growth Plan** | Monthly | $10.00 / mo | 100 labels / month |
-| `pkg_unlimited_labels` | **Unlimited Plan** | Monthly | $20.00 / mo | Unlimited labels |
+| Name          | Price               | Payment                                 | Product ID  | Show in App Market   | Quota Allowance    |
+| :------------ | :------------------ | :-------------------------------------- | :---------- | :------------------- | :----------------- |
+| **Starter**   | **$5**              | Recurring payment (20% yearly discount) | `starter`   | Visible (Toggle ON)  | 50 labels / month  |
+| **Basic**     | **Free to Install** | -                                       | `basic`     | Visible (Toggle OFF) | 5 labels / month   |
+| **Unlimited** | **$20**             | Recurring payment (10% yearly discount) | `unlimited` | Visible (Toggle ON)  | Unlimited labels   |
+| **Growth**    | **$10**             | Recurring payment (20% yearly discount) | `growth`    | Visible (Toggle ON)  | 100 labels / month |
 
 ---
 
@@ -25,8 +25,8 @@ export interface WixDecodedInstance {
   uid?: string;
   permissions?: string;
   billing?: {
-    packageName?: string;         // e.g. "Starter Plan", "Growth Plan", "Unlimited Plan"
-    vendorProductId?: string;     // e.g. "pkg_starter_50_labels"
+    packageName?: string; // e.g. "Starter", "Growth", "Unlimited", "Basic"
+    vendorProductId?: string; // e.g. "starter", "growth", "unlimited", "basic"
     expirationDate?: string;
     billingCycle?: 'MONTHLY' | 'YEARLY';
   };
@@ -36,11 +36,12 @@ export interface WixDecodedInstance {
 ### Plan Sync on Dashboard Access
 
 Whenever the dashboard initializes, `syncBillingFromInstance(decodedInstance)` runs:
+
 1. If `decodedInstance.billing?.vendorProductId` matches a paid tier:
-   - Matches `pkg_starter_50_labels` &rarr; Sets tier to `STARTER` (quota: 50).
-   - Matches `pkg_growth_100_labels` &rarr; Sets tier to `GROWTH` (quota: 100).
-   - Matches `pkg_unlimited_labels` &rarr; Sets tier to `UNLIMITED` (quota: -1).
-2. If `decodedInstance.billing` is missing or expired &rarr; Defaults to `FREE` (quota: 5).
+   - Matches `starter` &rarr; Sets tier to `STARTER` (quota: 50).
+   - Matches `growth` &rarr; Sets tier to `GROWTH` (quota: 100).
+   - Matches `unlimited` &rarr; Sets tier to `UNLIMITED` (quota: -1).
+2. If `decodedInstance.billing` is missing, expired, or matches `basic` &rarr; Defaults to `FREE` (quota: 5).
 
 ---
 
@@ -102,6 +103,7 @@ export async function POST(req: NextRequest) {
 ## 4. Merchant Upgrade Checkout Flow
 
 When a merchant clicks **"Upgrade Plan"** or exceeds their 5 labels on Free tier:
+
 1. The client invokes:
    ```typescript
    export function openWixUpgradeCheckout(packageId: string) {
@@ -113,4 +115,3 @@ When a merchant clicks **"Upgrade Plan"** or exceeds their 5 labels on Free tier
 2. The merchant completes payment via Wix App Market's secure hosted billing.
 3. Wix issues the `PAID_PLAN_PURCHASED` webhook.
 4. The merchant's quota immediately updates, unlocking label creation.
-

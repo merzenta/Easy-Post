@@ -13,10 +13,19 @@ import { prisma } from '../../src/app/utils/prisma';
 import { setEasyPostClientFactory } from '../../src/app/utils/easypost-client';
 
 test('Order Fulfillment & EasyPost Shipment Lifecycle Unit Tests', async (t) => {
-  const TEST_TENANT = 'tenant-test-easypost-lifecycle-001';
+  const TEST_TENANT = `tenant-test-easypost-lifecycle-${Date.now()}`;
 
   async function cleanup() {
     try {
+      await prisma.subscriptionUsageLog.deleteMany({
+        where: { instanceId: TEST_TENANT },
+      });
+      await prisma.monthlyUsage.deleteMany({
+        where: { instanceId: TEST_TENANT },
+      });
+      await prisma.merchantSubscription.deleteMany({
+        where: { instanceId: TEST_TENANT },
+      });
       await prisma.shipmentItem.deleteMany({
         where: { shipment: { instanceId: TEST_TENANT } },
       });

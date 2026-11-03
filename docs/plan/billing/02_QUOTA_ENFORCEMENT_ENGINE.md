@@ -55,7 +55,7 @@ export class QuotaExceededError extends Error {
 
   constructor(details: QuotaCheckResult) {
     super(
-      `Monthly label limit of ${details.monthlyQuota} reached for the ${details.planType} plan. Upgrade to generate more labels.`
+      `Monthly label limit of ${details.monthlyQuota} reached for the ${details.planType} plan. Upgrade to generate more labels.`,
     );
     this.name = 'QuotaExceededError';
     this.details = details;
@@ -67,7 +67,7 @@ export class QuotaExceededError extends Error {
  */
 export async function assertQuotaAvailable(instanceId: string): Promise<QuotaCheckResult> {
   const currentCycleKey = getBillingCycleKey(new Date()); // e.g. "2026-11"
-  
+
   // 1. Fetch or initialize subscription
   const subscription = await getOrCreateSubscription(instanceId);
 
@@ -173,4 +173,3 @@ export async function recordLabelPurchaseSuccess(params: {
 - **No Cron Jobs Required**: Because `billingCycleKey` is determined by `YYYY-MM` (or the tenant's renewal period), when a new month begins, `assertQuotaAvailable` automatically references the new key (e.g. `2026-12`).
 - The count resets to `0` automatically on the 1st of each month.
 - Historical usage remains preserved in PostgreSQL for historical billing analytics and merchant transparency.
-
