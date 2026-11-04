@@ -9,10 +9,10 @@
     "test:unit": "tsx --env-file=.env --test tests/unit/*.test.ts",
     "all": "npm run lint && npm run build && npm run test",
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint --fix",
-    "postinstall": "node scripts/patch-nextjs.js",
+    "postinstall": "prisma generate && node scripts/patch-nextjs.js",
     "dev:https": "next dev --experimental-https"
   },
   "dependencies": {
