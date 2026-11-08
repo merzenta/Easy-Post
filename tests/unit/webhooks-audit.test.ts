@@ -26,9 +26,12 @@ test('Wix Webhooks Security & Installation Audit Tests', async (t) => {
   });
 
   const originalJwtKey = process.env.WIX_APP_JWT_KEY;
+  const originalNodeEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'test';
 
   t.after(async () => {
     process.env.WIX_APP_JWT_KEY = originalJwtKey;
+    process.env.NODE_ENV = originalNodeEnv;
   });
 
   await t.test('normalizeWixPublicKey correctly sanitizes keys in multiple environments', () => {

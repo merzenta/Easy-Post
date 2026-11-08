@@ -1,9 +1,7 @@
 import { type NextRequest } from 'next/server';
 import { withRequestLogging } from '@/app/utils/request-logger';
 import { verifyAndParseWixWebhook, isAppInstalledEvent, isAppRemovedEvent } from '@/app/utils/wix-webhook-verifier';
-import { merchantSettingsRepo } from '@/app/repositories';
-import { subscriptionRepo } from '@/app/repositories/subscription-repo';
-import { handleWixBillingWebhookEvent } from '@/app/actions/billing-webhook.action';
+import { webhookWorker } from '@/app/utils/webhook-worker';
 import { logger } from '@/app/utils/logger';
 
 /**
@@ -25,7 +23,7 @@ export const GET = async function GET() {
 
 /**
  * Unified webhook dispatcher for Wix Developers Center.
- * Automatically inspects eventType and routes AppInstalled, AppRemoved, Billing, and Order events.
+ * Automatically inspects eventType, verifies JWT, and delegates tasks to background worker queue.
  */
 export const POST = withRequestLogging(
   async function POST(request: NextRequest) {
@@ -59,42 +57,46 @@ export const POST = withRequestLogging(
 
       // 1. App Installed
       if (isAppInstalledEvent(eventType)) {
-        try {
-          await subscriptionRepo.getOrCreateSubscription(instanceId);
-          const existingSettings = await merchantSettingsRepo.getSettings(instanceId);
-          if (!existingSettings) {
-            await merchantSettingsRepo.saveSettings(instanceId, {
-              environment: 'TEST',
-              defaultLabelFormat: 'PDF',
-              enabledCarriers: ['USPS', 'FedEx', 'UPS', 'DHL'],
-              fallbackRate: 10.0,
-              defaultItemWeightOz: 16.0,
-            });
-          }
-          logger.info('WEBHOOK_DISPATCHER', 'Tenant provisioned on App Installed event', { instanceId });
-        } catch (dbErr: any) {
-          logger.error('WEBHOOK_DISPATCHER', 'Database provisioning warning', dbErr);
+        const job = webhookWorker.enqueue({
+          type: 'APP_INSTALLED',
+          instanceId,
+          eventType,
+          payload,
+        });
+
+        if (process.env.NODE_ENV === 'test') {
+          await webhookWorker.drain();
         }
 
-        return new Response(JSON.stringify({ received: true, status: 'installed', instanceId, eventType }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({ received: true, status: 'installed', instanceId, eventType, jobId: job.id }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
       }
 
       // 2. App Removed / Uninstalled
       if (isAppRemovedEvent(eventType)) {
-        try {
-          await subscriptionRepo.cancelSubscription(instanceId);
-          logger.info('WEBHOOK_DISPATCHER', 'Tenant subscription cancelled on App Removed', { instanceId });
-        } catch (dbErr: any) {
-          logger.warn('WEBHOOK_DISPATCHER', 'Error cancelling subscription', dbErr);
+        const job = webhookWorker.enqueue({
+          type: 'APP_REMOVED',
+          instanceId,
+          eventType,
+          payload,
+        });
+
+        if (process.env.NODE_ENV === 'test') {
+          await webhookWorker.drain();
         }
 
-        return new Response(JSON.stringify({ received: true, status: 'uninstalled', instanceId, eventType }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({ received: true, status: 'uninstalled', instanceId, eventType, jobId: job.id }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
       }
 
       // 3. Billing (Plan Purchased, Changed, Cancelled)
@@ -104,16 +106,24 @@ export const POST = withRequestLogging(
         normalizedEvent.includes('billing') ||
         normalizedEvent.includes('subscription')
       ) {
-        await handleWixBillingWebhookEvent({
-          eventType,
+        const job = webhookWorker.enqueue({
+          type: 'BILLING_EVENT',
           instanceId,
-          data: payload,
+          eventType,
+          payload,
         });
 
-        return new Response(JSON.stringify({ received: true, status: 'billing_processed', instanceId }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        if (process.env.NODE_ENV === 'test') {
+          await webhookWorker.drain();
+        }
+
+        return new Response(
+          JSON.stringify({ received: true, status: 'billing_processed', instanceId, jobId: job.id }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        );
       }
 
       // Default acknowledge for unknown or custom test events

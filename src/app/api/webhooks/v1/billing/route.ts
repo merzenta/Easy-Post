@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
-import { handleWixBillingWebhookEvent } from '@/app/actions/billing-webhook.action';
 import { withRequestLogging } from '@/app/utils/request-logger';
 import { verifyAndParseWixWebhook } from '@/app/utils/wix-webhook-verifier';
+import { webhookWorker } from '@/app/utils/webhook-worker';
 import { logger } from '@/app/utils/logger';
 
 /**
@@ -37,17 +37,24 @@ export const POST = withRequestLogging(
 
       const { instanceId, eventType, payload } = parsed;
 
+      let jobId: string | undefined;
       if (instanceId && eventType) {
-        await handleWixBillingWebhookEvent({
-          eventType,
+        const job = webhookWorker.enqueue({
+          type: 'BILLING_EVENT',
           instanceId,
-          data: payload,
+          eventType,
+          payload,
         });
+        jobId = job.id;
+
+        if (process.env.NODE_ENV === 'test') {
+          await webhookWorker.drain();
+        }
       } else {
         logger.warn('WEBHOOK_BILLING', 'Missing instanceId or eventType in payload', { parsed });
       }
 
-      return new Response(JSON.stringify({ received: true, status: 'processed', instanceId }), {
+      return new Response(JSON.stringify({ received: true, status: 'processed', instanceId, jobId }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       });

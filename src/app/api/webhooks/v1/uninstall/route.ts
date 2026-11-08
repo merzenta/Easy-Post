@@ -1,7 +1,7 @@
 import { type NextRequest } from 'next/server';
 import { withRequestLogging } from '@/app/utils/request-logger';
 import { verifyAndParseWixWebhook } from '@/app/utils/wix-webhook-verifier';
-import { subscriptionRepo } from '@/app/repositories/subscription-repo';
+import { webhookWorker } from '@/app/utils/webhook-worker';
 import { logger } from '@/app/utils/logger';
 
 /**
@@ -51,14 +51,17 @@ export const POST = withRequestLogging(
         );
       }
 
-      // Mark tenant subscription as CANCELLED in database
-      try {
-        await subscriptionRepo.cancelSubscription(instanceId);
-        logger.info('WEBHOOK_UNINSTALL', 'Tenant subscription cancelled', { instanceId });
-      } catch (dbErr: any) {
-        logger.warn('WEBHOOK_UNINSTALL', 'Error cancelling subscription (tenant may not exist)', {
-          error: dbErr?.message,
-        });
+      // Delegate cancellation to background worker queue
+      const job = webhookWorker.enqueue({
+        type: 'APP_REMOVED',
+        instanceId,
+        eventType: eventType || 'AppRemoved',
+        payload: parsed.payload,
+      });
+
+      // In unit test runner, await queue drain so database assertions pass synchronously
+      if (process.env.NODE_ENV === 'test') {
+        await webhookWorker.drain();
       }
 
       return new Response(
@@ -66,6 +69,7 @@ export const POST = withRequestLogging(
           received: true,
           status: 'uninstalled',
           instanceId,
+          jobId: job.id,
           eventType: eventType || 'AppRemoved',
         }),
         {

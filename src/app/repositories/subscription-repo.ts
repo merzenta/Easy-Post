@@ -104,9 +104,32 @@ export class SubscriptionRepository {
 
   /**
    * Marks subscription as cancelled (access remains until currentPeriodEnd).
+   * Safely handles case where tenant record does not exist in DB yet.
    */
   async cancelSubscription(instanceId: string): Promise<MerchantSubscriptionDTO> {
     const prisma = getPrismaClient();
+    const existing = await prisma.merchantSubscription.findUnique({
+      where: { instanceId },
+    });
+
+    if (!existing) {
+      const now = new Date();
+      const cycleEnd = getCycleEndDate(now);
+      const created = await prisma.merchantSubscription.create({
+        data: {
+          instanceId,
+          planType: 'FREE',
+          status: 'CANCELLED',
+          monthlyQuota: 5,
+          priceMonthly: 0,
+          currentPeriodStart: now,
+          currentPeriodEnd: cycleEnd,
+          cancelledAt: now,
+        },
+      });
+      return this.mapSubscription(created);
+    }
+
     const record = await prisma.merchantSubscription.update({
       where: { instanceId },
       data: {
