@@ -92,13 +92,15 @@ export async function verifyAndParseWixWebhook<T = any>(
 
   if (typeof request === 'string') {
     bodyText = request;
-  } else if (typeof request.text === 'function') {
+  } else if ((request as any)?.__rawBody) {
+    bodyText = (request as any).__rawBody;
+  } else if (typeof (request as any)?.text === 'function') {
     try {
       if (typeof (request as any).clone === 'function') {
         const cloned = (request as any).clone();
         bodyText = await cloned.text();
       } else {
-        bodyText = await request.text();
+        bodyText = await (request as any).text();
       }
     } catch (err) {
       logger.warn('WEBHOOK_STREAM', 'Failed to read request body stream', { error: String(err) });
@@ -167,13 +169,22 @@ export async function verifyAndParseWixWebhook<T = any>(
 
         const instanceId =
           eventData?.instanceId ||
+          eventData?.metadata?.instanceId ||
           verified?.instanceId ||
           verified?.metadata?.instanceId ||
           innerPayload?.instanceId ||
+          innerPayload?.metadata?.instanceId ||
+          verified?.metadata?.accountInfo?.siteId ||
           '';
 
         const eventType =
-          eventData?.eventType || verified?.eventType || verified?.metadata?.eventType || innerPayload?.eventType || '';
+          eventData?.eventType ||
+          eventData?.metadata?.eventType ||
+          verified?.eventType ||
+          verified?.metadata?.eventType ||
+          innerPayload?.eventType ||
+          innerPayload?.metadata?.eventType ||
+          '';
 
         return {
           isValid: true,
@@ -223,9 +234,23 @@ export async function verifyAndParseWixWebhook<T = any>(
         }
 
         const instanceId =
-          payloadObj?.instanceId || decoded.payload?.instanceId || decoded.payload?.data?.instanceId || '';
+          payloadObj?.instanceId ||
+          payloadObj?.metadata?.instanceId ||
+          decoded.payload?.instanceId ||
+          decoded.payload?.metadata?.instanceId ||
+          decoded.payload?.data?.instanceId ||
+          decoded.payload?.data?.metadata?.instanceId ||
+          decoded.payload?.metadata?.accountInfo?.siteId ||
+          '';
 
-        const eventType = payloadObj?.eventType || decoded.payload?.eventType || decoded.payload?.data?.eventType || '';
+        const eventType =
+          payloadObj?.eventType ||
+          payloadObj?.metadata?.eventType ||
+          decoded.payload?.eventType ||
+          decoded.payload?.metadata?.eventType ||
+          decoded.payload?.data?.eventType ||
+          decoded.payload?.data?.metadata?.eventType ||
+          '';
 
         let innerPayload = payloadObj?.data || payloadObj;
         if (typeof innerPayload === 'string') {
@@ -255,9 +280,12 @@ export async function verifyAndParseWixWebhook<T = any>(
   try {
     const jsonBody = JSON.parse(trimmed);
 
-    // Check if JSON has a nested JWT string in `data`
+    // Check if JSON has a nested JWT string in `data` or `token`
     if (typeof jsonBody?.data === 'string' && jsonBody.data.split('.').length === 3) {
       return verifyAndParseWixWebhook(jsonBody.data);
+    }
+    if (typeof jsonBody?.token === 'string' && jsonBody.token.split('.').length === 3) {
+      return verifyAndParseWixWebhook(jsonBody.token);
     }
 
     const instanceId =
@@ -265,10 +293,17 @@ export async function verifyAndParseWixWebhook<T = any>(
       jsonBody?.instance_id ||
       jsonBody?.metadata?.instanceId ||
       jsonBody?.data?.instanceId ||
+      jsonBody?.data?.metadata?.instanceId ||
+      jsonBody?.metadata?.accountInfo?.siteId ||
       '';
 
     const eventType =
-      jsonBody?.eventType || jsonBody?.event || jsonBody?.metadata?.eventType || jsonBody?.data?.eventType || '';
+      jsonBody?.eventType ||
+      jsonBody?.event ||
+      jsonBody?.metadata?.eventType ||
+      jsonBody?.data?.eventType ||
+      jsonBody?.data?.metadata?.eventType ||
+      '';
 
     const payload = jsonBody?.data || jsonBody?.payload || jsonBody;
 

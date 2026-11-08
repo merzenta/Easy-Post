@@ -5,35 +5,42 @@ import { OrderSummary } from '@/app/types/order';
 import { isTestingToken } from '@/app/utils/access-token';
 
 export async function getLastOrders({ accessToken }: { accessToken: string }): Promise<OrderSummary[]> {
-  const sdk = createSdk(accessToken);
-  return (
-    isTestingToken(accessToken)
-      ? (await import('@/app/utils/mocks-server')).getTestOrders()
-      : sdk.orders.searchOrders({
-          search: {
-            cursorPaging: {
-              limit: 3,
-            },
-          },
-        })
-  )
-    .then((res) => {
+  try {
+    if (isTestingToken(accessToken)) {
+      const mocks = await import('@/app/utils/mocks-server');
+      const testData = await mocks.getTestOrders();
       return (
-        res.orders?.map(
-          (order) =>
-            ({
-              id: order.number ?? '',
-              createdDate: order?._createdDate ?? '',
-              totalPrice: order?.priceSummary?.total?.amount ?? 0,
-              currency: order?.currency ?? 'USD',
-            }) as OrderSummary,
-        ) ?? []
+        testData.orders?.map((order: any) => ({
+          id: order.number ?? '',
+          createdDate: order._createdDate ?? order.createdDate ?? '',
+          totalPrice: order.priceSummary?.total?.amount ?? order.totalPriceBeforeTax?.amount ?? 0,
+          currency: order.currency ?? 'USD',
+        })) ?? []
       );
-    })
-    .catch((e) => {
-      console.error('Failed to fetch orders.ts: ', e);
-      return [];
-    });
+    }
+
+    const sdk = createSdk(accessToken);
+    const searchParams: any = {
+      search: {
+        cursorPaging: {
+          limit: 3,
+        },
+      },
+    };
+
+    const res: any = await sdk.orders.searchOrders(searchParams);
+    const ordersList: any[] = res?.orders || [];
+
+    return ordersList.map((order: any) => ({
+      id: order.number ?? '',
+      createdDate: order._createdDate ?? order.createdDate ?? '',
+      totalPrice: order.priceSummary?.total?.amount ?? 0,
+      currency: order.currency ?? 'USD',
+    }));
+  } catch (e) {
+    console.error('Failed to fetch orders.ts: ', e);
+    return [];
+  }
 }
 
 /**
@@ -48,17 +55,19 @@ export async function searchOrdersAction({ accessToken, limit = 25 }: { accessTo
 
   const sdk = createSdk(accessToken);
   try {
-    const res = await sdk.orders.searchOrders({
+    const searchParams: any = {
       search: {
         cursorPaging: {
           limit,
         },
       },
-    });
+    };
+
+    const res: any = await sdk.orders.searchOrders(searchParams);
 
     return {
-      orders: res.orders || [],
-      totalCount: res.metadata?.count || res.orders?.length || 0,
+      orders: res?.orders || [],
+      totalCount: res?.metadata?.count || res?.orders?.length || 0,
     };
   } catch (error) {
     console.error('searchOrdersAction error:', error);

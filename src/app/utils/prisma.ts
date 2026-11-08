@@ -31,10 +31,6 @@ export function assertDatabaseConfigured(): void {
 export function getPrismaClient(): PrismaClient {
   assertDatabaseConfigured();
 
-  if (process.env.NODE_ENV === 'production') {
-    return new PrismaClient();
-  }
-
   if (!global.prismaGlobal) {
     global.prismaGlobal = new PrismaClient({
       log: process.env.DEBUG_PRISMA ? ['query', 'error', 'warn'] : ['error'],

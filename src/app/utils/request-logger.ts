@@ -143,6 +143,7 @@ export function withRequestLogging<T extends (request?: any, context?: any) => P
         const cloned = request.clone();
         const text = await cloned.text();
         if (text) {
+          (request as any).__rawBody = text;
           const parsed = parseAndDecodeRequestBody(text, options.maxBodyLength || 50000);
           body = parsed.body;
           if (!instanceId && parsed.instanceId) {
